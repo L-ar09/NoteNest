@@ -1,21 +1,72 @@
 # NoteNest
 
-NoteNest is a personal, authenticated note-taking web application. It uses a React client with an AWS serverless API.
+NoteNest is a personal note-taking web application that gives each signed-in user a private workspace for creating, updating, organizing, and deleting notes.
 
-## Day 1 foundation
+## How it works
 
-- Architecture and security decisions: [`docs/architecture.md`](docs/architecture.md)
-- Note data model and access patterns: [`docs/data-model.md`](docs/data-model.md)
-- Low-fidelity UI wireframes: [`docs/wireframes.md`](docs/wireframes.md)
-- SAM infrastructure template: [`infrastructure/template.yaml`](infrastructure/template.yaml)
-- React starter application: [`frontend`](frontend)
+```text
+React web client
+      |
+      | Sign in and JWT
+      v
+Amazon Cognito User Pool
+      |
+      | Authorized API request
+      v
+API Gateway HTTP API
+      |
+      v
+AWS Lambda CRUD functions
+      |
+      v
+Amazon DynamoDB notes table
+```
 
-## Intended local workflow
+The React client provides the user interface. Amazon Cognito manages user registration, sign-in, and JSON Web Tokens (JWTs). API Gateway validates JWTs before forwarding requests to Lambda. Each Lambda function uses the authenticated user’s Cognito subject as the note owner, then accesses only that user’s DynamoDB partition.
+
+## AWS services
+
+| Service | Role in NoteNest |
+| --- | --- |
+| Amazon Cognito | User accounts, email verification, sign-in, and JWT issuance. |
+| Amazon API Gateway HTTP API | HTTPS API routes, CORS, and native JWT authorization. |
+| AWS Lambda | Serverless handlers for creating, listing, reading, updating, and deleting notes. |
+| Amazon DynamoDB | On-demand, encrypted storage for user-scoped notes. |
+| AWS CloudFormation / SAM | Defines the repeatable infrastructure in code. |
+
+## API
+
+All routes require `Authorization: <Cognito ID token>`.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/notes` | List the signed-in user’s notes. |
+| `POST` | `/notes` | Create a note. |
+| `GET` | `/notes/{noteId}` | Read one of the signed-in user’s notes. |
+| `PUT` | `/notes/{noteId}` | Update one of the signed-in user’s notes. |
+| `DELETE` | `/notes/{noteId}` | Delete one of the signed-in user’s notes. |
+
+## Data and access control
+
+Notes are stored with a partition key of `USER#<cognito-sub>` and a sort key of `NOTE#<note-id>`. The API derives the user ID from the verified JWT rather than accepting it from the request, preventing one user from requesting another user’s notes.
+
+## Project structure
+
+```text
+frontend/        React and Vite web client
+backend/         Node.js Lambda handlers and AWS SDK dependencies
+infrastructure/  SAM/CloudFormation template
+docs/            Architecture, data model, and wireframes
+```
+
+## Run locally
+
 
 ```powershell
-cd frontend
+cd C:\Users\larya\Developer\NoteNest\frontend
 npm install
 npm run dev
 ```
 
-After AWS authentication and SAM installation are complete, deploy the infrastructure from `infrastructure` with SAM. The template intentionally creates the data store and authentication boundary on Day 1; Lambda/API resources are added on Day 2.
+See [architecture.md](docs/architecture.md), [data-model.md](docs/data-model.md), and [wireframes.md](docs/wireframes.md) for the supporting design documentation.
+

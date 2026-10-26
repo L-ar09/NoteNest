@@ -33,4 +33,4 @@
 +------------------------+-----------------------------------+
 ```
 
-Day 3 implements this with responsive navigation: the note list collapses into a drawer on narrow screens.
+The responsive interface collapses the note list into a drawer on narrow screens.

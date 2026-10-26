@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: NoteNest Day 1 authentication and data foundation
+Description: NoteNest authenticated notes API
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        NOTES_TABLE_NAME: !Ref NotesTable
+        CORS_ORIGIN: http://localhost:5173
 
 Parameters:
   ProjectName:
@@ -79,35 +89,126 @@ Resources:
         IdToken: minutes
         RefreshToken: days
 
-  NoteApiFunctionRole:
-    Type: AWS::IAM::Role
+  NotesApi:
+    Type: AWS::Serverless::HttpApi
     Properties:
-      RoleName: !Sub '${ProjectName}-note-api-function'
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      StageName: $default
+      CorsConfiguration:
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowOrigins:
+          - http://localhost:5173
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              Audience:
+                - !Ref WebAppClient
+              Issuer: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}'
+
+  ListNotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-list-notes'
+      CodeUri: ../backend
+      Handler: src/handlers.listNotes
       Policies:
-        - PolicyName: NotesTableAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:DeleteItem
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:Query
-                  - dynamodb:UpdateItem
-                Resource: !GetAtt NotesTable.Arn
-      Tags:
-        - Key: Application
-          Value: NoteNest
+        - Statement:
+            Effect: Allow
+            Action: dynamodb:Query
+            Resource: !GetAtt NotesTable.Arn
+      Events:
+        ListNotes:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref NotesApi
+            Path: /notes
+            Method: GET
+
+  CreateNoteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-create-note'
+      CodeUri: ../backend
+      Handler: src/handlers.createNote
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: dynamodb:PutItem
+            Resource: !GetAtt NotesTable.Arn
+      Events:
+        CreateNote:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref NotesApi
+            Path: /notes
+            Method: POST
+
+  GetNoteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-get-note'
+      CodeUri: ../backend
+      Handler: src/handlers.getNote
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: dynamodb:GetItem
+            Resource: !GetAtt NotesTable.Arn
+      Events:
+        GetNote:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref NotesApi
+            Path: /notes/{noteId}
+            Method: GET
+
+  UpdateNoteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-update-note'
+      CodeUri: ../backend
+      Handler: src/handlers.updateNote
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: dynamodb:UpdateItem
+            Resource: !GetAtt NotesTable.Arn
+      Events:
+        UpdateNote:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref NotesApi
+            Path: /notes/{noteId}
+            Method: PUT
+
+  DeleteNoteFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-delete-note'
+      CodeUri: ../backend
+      Handler: src/handlers.deleteNote
+      Policies:
+        - Statement:
+            Effect: Allow
+            Action: dynamodb:DeleteItem
+            Resource: !GetAtt NotesTable.Arn
+      Events:
+        DeleteNote:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref NotesApi
+            Path: /notes/{noteId}
+            Method: DELETE
 
 Outputs:
   NotesTableName:
@@ -119,6 +220,6 @@ Outputs:
   WebAppClientId:
     Description: Public app client ID for the React application.
     Value: !Ref WebAppClient
-  NoteApiFunctionRoleArn:
-    Description: Scoped Lambda execution role reserved for the Note API.
-    Value: !GetAtt NoteApiFunctionRole.Arn
+  NotesApiUrl:
+    Description: Authenticated NoteNest HTTP API base URL.
+    Value: !Sub 'https://${NotesApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/'

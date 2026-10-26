@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "aws-amplify": "^6.15.10",
     "vite": "latest",
     "react": "latest",
     "react-dom": "latest"

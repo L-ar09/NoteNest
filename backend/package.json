@@ -1,0 +1,10 @@
+{
+  "name": "notenest-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1017.0",
+    "@aws-sdk/lib-dynamodb": "^3.1017.0"
+  }
+}

@@ -5,16 +5,21 @@ dist/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+coverage/
+*.log
+npm-debug.log*
 
 # AWS SAM build artifacts and local settings
 .aws-sam/
 samconfig.toml
 env.json
+cdk.out/
 
 # Local environment configuration
 .env
 .env.*
 !.env.example
+*.local
 
 # Editor and operating-system files
 .DS_Store
