@@ -1,0 +1,26 @@
+# JavaScript dependencies and builds
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
+# AWS SAM build artifacts and local settings
+.aws-sam/
+samconfig.toml
+env.json
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local agent instructions
+AGENTS.md
