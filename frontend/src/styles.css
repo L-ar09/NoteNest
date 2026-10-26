@@ -1,0 +1,35 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #19221b;
+  background: #f4f7f1;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; }
+
+.welcome {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 2rem;
+}
+
+.welcome section {
+  max-width: 42rem;
+  padding: 3rem;
+  border: 1px solid #d9e2d6;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1.5rem 4rem rgb(36 65 40 / 8%);
+}
+
+.eyebrow {
+  color: #49734c;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+h1 { font-size: clamp(2.25rem, 7vw, 4.5rem); line-height: 1; margin: .5rem 0 1rem; }
+p { color: #4e594e; font-size: 1.1rem; line-height: 1.6; }
